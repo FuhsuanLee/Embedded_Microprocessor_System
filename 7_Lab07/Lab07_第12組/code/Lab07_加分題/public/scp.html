@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Courier New', monospace;
+        background: #0a0a0a;
+        color: #00ff00;
+        min-height: 100vh;
+    }
+    
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .header {
+        text-align: center;
+        border: 2px solid #00ff00;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: rgba(0, 255, 0, 0.05);
+    }
+    
+    .header h1 {
+        font-size: 28px;
+        margin-bottom: 10px;
+        text-shadow: 0 0 10px #00ff00;
+    }
+    
+    .header .subtitle {
+        font-size: 14px;
+        opacity: 0.7;
+    }
+    
+    /* 狀態面板 */
+    .status-panel {
+        border: 2px solid #00ff00;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+    
+    .status-panel.secure {
+        border-color: #00ff00;
+        background: rgba(0, 255, 0, 0.1);
+    }
+    
+    .status-panel.warning {
+        border-color: #ffff00;
+        background: rgba(255, 255, 0, 0.1);
+        color: #ffff00;
+    }
+    
+    .status-panel.breach {
+        border-color: #ff0000;
+        background: rgba(255, 0, 0, 0.2);
+        color: #ff0000;
+        animation: breach-flash 0.5s infinite;
+    }
+    
+    @keyframes breach-flash {
+        0%, 100% { background: rgba(255, 0, 0, 0.2); }
+        50% { background: rgba(255, 0, 0, 0.4); }
+    }
+    
+    .phase-display {
+        font-size: 48px;
+        font-weight: bold;
+        text-align: center;
+        margin: 20px 0;
+        text-shadow: 0 0 20px currentColor;
+    }
+    
+    .phase-icon {
+        font-size: 60px;
+        text-align: center;
+        margin: 10px 0;
+    }
+    
+    .adc-value {
+        font-size: 32px;
+        text-align: center;
+        margin: 20px 0;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .info-box {
+        border: 1px solid currentColor;
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .info-box .label {
+        font-size: 12px;
+        opacity: 0.7;
+        margin-bottom: 5px;
+    }
+    
+    .info-box .value {
+        font-size: 20px;
+        font-weight: bold;
+    }
+    
+    /* 攝影機畫面 */
+    .camera-section {
+        border: 2px solid #00ff00;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .camera-section h2 {
+        margin-bottom: 15px;
+        font-size: 18px;
+    }
+    
+    .camera-feed {
+        width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+        border: 1px solid #00ff00;
+        background: #000;
+    }
+    
+    .camera-status {
+        margin-top: 10px;
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    /* 階段說明 */
+    .phase-legend {
+        border: 2px solid #00ff00;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .phase-legend h2 {
+        margin-bottom: 15px;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #333;
+    }
+    
+    .legend-item.secure { border-left: 4px solid #00ff00; }
+    .legend-item.warning { border-left: 4px solid #ffff00; color: #ffff00; }
+    .legend-item.breach { border-left: 4px solid #ff0000; color: #ff0000; }
+    
+    .legend-icon {
+        font-size: 24px;
+        margin-right: 15px;
+    }
+    
+    .legend-text .title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .legend-text .desc {
+        font-size: 12px;
+        opacity: 0.8;
+    }
+    
+    /* 控制按鈕 */
+    .controls {
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    button {
+        background: transparent;
+        border: 2px solid #ff0000;
+        color: #ff0000;
+        padding: 15px 40px;
+        font-size: 16px;
+        font-family: 'Courier New', monospace;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    button:hover {
+        background: #ff0000;
+        color: #000;
+    }
+    
+    .timestamp {
+        text-align: center;
+        font-size: 12px;
+        opacity: 0.5;
+        margin-top: 20px;
+    }
+</style>
+
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCP-XXXX 收容監控系統</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 SCP-XXXX 收容監控系統</h1>
+            <div class="subtitle">CONTAINMENT MONITORING SYSTEM v1.0</div>
+            <div class="subtitle">三階段防禦機制 (Three-Phase Defense Protocol)</div>
+        </div>
+        
+        <div id="statusPanel" class="status-panel secure">
+            <div id="phaseIcon" class="phase-icon">✅</div>
+            <div id="phaseDisplay" class="phase-display">SECURE</div>
+            <div id="adcValue" class="adc-value">ADC: ---</div>
+            
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="label">LED 狀態</div>
+                    <div id="ledStatus" class="value">待機</div>
+                </div>
+                <div class="info-box">
+                    <div class="label">攝影機狀態</div>
+                    <div id="cameraStatus" class="value">休眠</div>
+                </div>
+                <div class="info-box">
+                    <div class="label">截圖數量</div>
+                    <div id="captureCount" class="value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="label">運行時間</div>
+                    <div id="runtime" class="value">00:00:00</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="camera-section">
+            <h2>📹 即時監控畫面</h2>
+            <img id="cameraFeed" class="camera-feed" src="" alt="監控畫面">
+            <div id="cameraInfo" class="camera-status">等待畫面...</div>
+        </div>
+        
+        <div class="phase-legend">
+            <h2>📋 階段說明</h2>
+            <div class="legend-item secure">
+                <div class="legend-icon">✅</div>
+                <div class="legend-text">
+                    <div class="title">安全模式 (Secure Phase) - ADC > 200</div>
+                    <div class="desc">LED: 不亮 | 攝影機: 休眠 (Standby)</div>
+                </div>
+            </div>
+            <div class="legend-item warning">
+                <div class="legend-icon">⚠️</div>
+                <div class="legend-text">
+                    <div class="title">警戒模式 (Warning Phase) - ADC 70~200</div>
+                    <div class="desc">LED: 交錯巡邏閃爍 | 攝影機: 每3秒擷取一次</div>
+                </div>
+            </div>
+            <div class="legend-item breach">
+                <div class="legend-icon">🚨</div>
+                <div class="legend-text">
+                    <div class="title">失效模式 (Breach Phase) - ADC < 70</div>
+                    <div class="desc">LED: 高頻亂數暴閃 | 攝影機: 每0.5秒擷取 (全速錄影)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <form id="stopForm" onsubmit="return stopSCP(event)">
+                <button type="submit">⛔ 終止監控並返回</button>
+            </form>
+        </div>
+        
+        <div id="timestamp" class="timestamp"></div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        let startTime = Date.now();
+        let captureCount = 0;
+        let statusInterval;
+        let imageInterval;
+        let currentPhase = 'SECURE';
+        
+        // 更新運行時間
+        function updateRuntime() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const hours = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+            const seconds = String(elapsed % 60).padStart(2, '0');
+            $('#runtime').text(`${hours}:${minutes}:${seconds}`);
+        }
+        
+        // 取得 SCP 狀態（每秒呼叫）
+        function getStatus() {
+            $.ajax({
+                type: "get",
+                url: "/scp_status",
+                success: function(result) {
+                    const [phase, adc] = result.split('|');
+                    currentPhase = phase;
+                    updateDisplay(phase, parseInt(adc));
+                },
+                error: function(xhr, status, error) {
+                    console.error("狀態讀取錯誤:", error);
+                }
+            });
+        }
+        
+        // 更新顯示
+        function updateDisplay(phase, adc) {
+            const panel = $('#statusPanel');
+            const icon = $('#phaseIcon');
+            const display = $('#phaseDisplay');
+            const cameraSection = $('.camera-section');
+            
+            panel.removeClass('secure warning breach');
+            
+            if (phase === 'SECURE') {
+                panel.addClass('secure');
+                icon.text('✅');
+                display.text('SECURE');
+                $('#ledStatus').text('待機 (不亮)');
+                $('#cameraStatus').text('休眠 (Standby)');
+                // 安全模式隱藏攝影機畫面
+                cameraSection.hide();
+            } else if (phase === 'WARNING') {
+                panel.addClass('warning');
+                icon.text('⚠️');
+                display.text('WARNING');
+                $('#ledStatus').text('交錯巡邏閃爍');
+                $('#cameraStatus').text('每3秒擷取');
+                // 警戒模式顯示攝影機畫面
+                cameraSection.show();
+            } else {
+                panel.addClass('breach');
+                icon.text('🚨');
+                display.text('BREACH');
+                $('#ledStatus').text('高頻亂數暴閃');
+                $('#cameraStatus').text('全速錄影 (0.5s)');
+                // 失效模式顯示攝影機畫面
+                cameraSection.show();
+            }
+            
+            $('#adcValue').text(`ADC: ${adc}`);
+            $('#timestamp').text(`最後更新: ${new Date().toLocaleString()}`);
+        }
+        
+        // 更新攝影機畫面（每 0.5 秒呼叫）
+        function updateCameraFeed() {
+            // 只有非安全模式才抓圖片
+            if (currentPhase === 'SECURE') {
+                return;
+            }
+            
+            // 直接載入最新圖片（加上時間戳避免快取）
+            const timestamp = Date.now();
+            const img = $('#cameraFeed');
+            
+            // 建立新圖片測試是否存在
+            const testImg = new Image();
+            testImg.onload = function() {
+                img.attr('src', '/scp_latest.jpg?t=' + timestamp);
+                captureCount++;
+                $('#captureCount').text(captureCount);
+                $('#cameraInfo').text(`截圖時間: ${new Date().toLocaleTimeString()}`);
+            };
+            testImg.onerror = function() {
+                // 圖片不存在，不更新
+            };
+            testImg.src = '/scp_latest.jpg?t=' + timestamp;
+        }
+        
+        // 停止 SCP 監控
+        function stopSCP(event) {
+            event.preventDefault();
+            
+            clearInterval(statusInterval);
+            clearInterval(imageInterval);
+            
+            $.ajax({
+                type: "get",
+                url: "/stopSCP",
+                success: function(result) {
+                    console.log("已停止 SCP 監控:", result);
+                    window.location.href = "/index";
+                },
+                error: function() {
+                    window.location.href = "/index";
+                }
+            });
+            
+            return false;
+        }
+        
+        // 頁面離開時停止監控
+        window.addEventListener('beforeunload', function() {
+            navigator.sendBeacon('/stopSCP');
+        });
+        
+        // 啟動
+        $(document).ready(function() {
+            // 每秒更新狀態
+            statusInterval = setInterval(function() {
+                getStatus();
+                updateRuntime();
+            }, 1000);
+            
+            // 每 0.5 秒抓圖片
+            imageInterval = setInterval(updateCameraFeed, 500);
+            
+            // 立即執行一次
+            getStatus();
+        });
+    </script>
+</body>
+</html>

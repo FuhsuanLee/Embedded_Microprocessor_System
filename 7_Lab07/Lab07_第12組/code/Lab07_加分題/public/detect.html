@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<style>
+    .all{
+        background:#e8fcef;
+        width:600px;
+        height:800px;
+        border:10px solid #b3dbb1;
+        margin:0 auto;
+        text-align: center;
+        padding: 20px;
+    }
+    .all h1{
+        font-size: 40px;
+        font-weight:500px;
+        padding-left:75px;
+        padding-top:30px;
+        font-style:italic;
+        text-align: left;
+    }
+    .all p{
+        font-size:20px;
+        font-weight:200px;
+        opacity:0.5;
+    }
+    #response {
+        font-size: 40px;
+        margin: 30px 0;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        color: #2c3e50;
+        font-weight: bold;
+    }
+    .detecting-title {
+        color: #27ae60;
+        font-size: 32px;
+        margin: 20px 0;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .info-text {
+        font-size: 18px;
+        color: #34495e;
+        margin: 15px 0;
+    }
+    button {
+        background: #e74c3c;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px;
+    }
+    button:hover {
+        background: #c0392b;
+    }
+    .led-indicator {
+        font-size: 24px;
+        margin: 10px 0;
+        padding: 10px;
+        background: #ecf0f1;
+        border-radius: 5px;
+    }
+</style>
+
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>偵測模式</title>
+    </head>
+    <body>
+        <div class="all">
+            <p>
+                <h1>GPIO 控制系統</h1>
+            </p>
+            <hr>
+            <h1 class="detecting-title">-- 偵測進行中 --</h1>
+
+            <div class="info-text">項目一：光敏電阻偵測與 LED 閃爍控制</div>
+            
+            <h2>光敏電阻值：</h2>
+            <div id="response">讀取中...</div>
+            
+            <div class="info-text">
+                <div class="led-indicator">依照光敏電阻值控制 LED 閃爍頻率</div>
+                <small>閃爍頻率 = 100000 / 光敏電阻值 (ms)</small>
+            </div>
+            
+            <hr>
+            
+            <form id="stopForm" onsubmit="return stopDetect(event)">
+                <h2>切換模式</h2>
+                <button type="submit">NO_DETECT - 停止偵測並返回（項目二）</button>
+            </form>
+        </div>
+        
+        <script
+        src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+        crossorigin="anonymous"></script>
+        <script>
+            // 設定定時器，每秒更新一次光敏電阻值
+            let detectInterval = setInterval(GetResult, 1000);
+            
+            function GetResult(){
+                $.ajax({
+                    type: "get",
+                    url: "/detecting",
+                    success: function (result){
+                        console.log("光敏電阻值:", result);
+                        $('#response').text(result);
+                        
+                        // 計算並顯示閃爍頻率
+                        const resistorValue = parseFloat(result);
+                        if (!isNaN(resistorValue) && resistorValue > 0) {
+                            const delay = (20.0 / (resistorValue + 20) * 1000).toFixed(0);
+                            console.log("LED 閃爍延遲:", delay, "ms");
+                        }
+                    },
+                    error: function(xhr, status, error){
+                        console.error("讀取錯誤:", error);
+                        $('#response').text("讀取失敗");
+                    }
+                });
+            }
+            
+            // 停止偵測並返回主頁面
+            function stopDetect(event) {
+                event.preventDefault();
+                
+                // 停止定時器
+                clearInterval(detectInterval);
+                
+                // 呼叫停止 API
+                $.ajax({
+                    type: "get",
+                    url: "/stopDetect",
+                    success: function(result) {
+                        console.log("已停止偵測:", result);
+                        // 跳轉到主頁面
+                        window.location.href = "/index";
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("停止錯誤:", error);
+                        // 即使錯誤也跳轉
+                        window.location.href = "/index";
+                    }
+                });
+                
+                return false;
+            }
+            
+            // 當使用者離開頁面時也停止偵測
+            window.addEventListener('beforeunload', function() {
+                // 發送同步請求停止偵測
+                navigator.sendBeacon('/stopDetect');
+            });
+        </script>
+    </body>
+</html>

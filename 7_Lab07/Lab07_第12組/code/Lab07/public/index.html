@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+
+<style>
+    .all{
+        background:#e8fcef;
+        width:600px;
+        height:900px;
+        border:10px solid #b3dbb1;
+        margin:0 auto;
+        text-align: center;
+        padding: 20px;
+    }
+    .all h1{
+        font-size: 40px;
+        font-weight:500px;
+        padding-left:75px;
+        padding-top:30px;
+        font-style:italic;
+        text-align: left;
+    }
+    .all p{
+        font-size:20px;
+        font-weight:200px;
+        opacity:0.5;
+    }
+    .status-message {
+        margin: 20px 0;
+        padding: 15px;
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 5px;
+        color: #155724;
+        font-size: 16px;
+        font-weight: bold;
+    }
+    .control-section {
+        margin: 30px 0;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+    }
+    .led-checkbox {
+        margin: 15px;
+        font-size: 18px;
+    }
+    .power-radio {
+        margin: 10px;
+        font-size: 18px;
+    }
+    button, input[type="submit"] {
+        background: #4CAF50;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px;
+    }
+    button:hover, input[type="submit"]:hover {
+        background: #45a049;
+    }
+</style>
+
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>LED 控制面板</title>
+    </head>
+    <body>
+        <div class="all">
+            <p>
+                <h1>GPIO 控制系統</h1>
+            </p>
+            <hr>
+            
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
+
+            <div class="control-section">
+                <h2>LED 控制面板（項目二）</h2>
+                <form id="ledControlForm" onsubmit="return submitLEDControl(event)">
+                    <div>
+                        <div class="led-checkbox">
+                            <input type="checkbox" id="led1" name="led1" value="on">
+                            <label for="led1">LED1</label>
+                        </div>
+            
+                        <div class="led-checkbox">
+                            <input type="checkbox" id="led2" name="led2" value="on">
+                            <label for="led2">LED2</label>
+                        </div>
+                    </div>
+        
+                    <div>
+                        <div class="power-radio">
+                            <input type="radio" id="ON" name="POWER" value="on" required>
+                            <label for="ON">燈亮</label>
+                        </div>
+        
+                        <div class="power-radio">
+                            <input type="radio" id="OFF" name="POWER" value="off">
+                            <label for="OFF">燈滅</label>
+                        </div>
+                    </div>
+                    <input type="submit" value="Submit">
+                </form>
+            </div>
+
+            <hr>
+
+            <div class="control-section">
+                <h2>切換模式</h2>
+                <form action="/detect" method="get">
+                    <button type="submit">DETECT - 啟動偵測（項目一）</button>
+                </form>
+            </div>
+        </div>
+        
+        <script>
+            function submitLEDControl(event) {
+                event.preventDefault();
+                
+                const led1 = document.getElementById('led1').checked;
+                const led2 = document.getElementById('led2').checked;
+                const power = document.querySelector('input[name="POWER"]:checked').value;
+                
+                if (!led1 && !led2) {
+                    alert('請至少選擇一個 LED');
+                    return false;
+                }
+                
+                // 構建 URL 參數
+                let params = new URLSearchParams();
+                params.append('botton1', 'Submit');
+                if (led1) params.append('led1', 'on');
+                if (led2) params.append('led2', 'on');
+                params.append('POWER', power);
+                
+                // 發送請求
+                fetch('/controlLED?' + params.toString())
+                    .then(response => response.json())
+                    .then(data => {
+                        // 顯示狀態訊息
+                        const statusDiv = document.getElementById('statusMessage');
+                        let message = '送出狀態：<br>';
+                        if (led1) message += `LED1: ${power === 'on' ? '開啟' : '關閉'}<br>`;
+                        if (led2) message += `LED2: ${power === 'on' ? '開啟' : '關閉'}<br>`;
+                        message += `執行時間: ${new Date().toLocaleTimeString()}`;
+                        
+                        statusDiv.innerHTML = message;
+                        statusDiv.style.display = 'block';
+                        
+                        console.log('LED 控制成功:', data);
+                    })
+                    .catch(error => {
+                        console.error('錯誤:', error);
+                        alert('控制失敗，請稍後再試');
+                    });
+                
+                return false;
+            }
+        </script>
+    </body>
+</html>
