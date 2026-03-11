@@ -1,0 +1,1 @@
+cmd_/home/windows/lab05/hellod.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000 -z noexecstack   --build-id  -T ./scripts/module-common.lds -o /home/windows/lab05/hellod.ko /home/windows/lab05/hellod.o /home/windows/lab05/hellod.mod.o;  true
